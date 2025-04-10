@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArcGIS Map with Widgets</title>
+    <style>
+        /* 页面布局 */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto; /* 页眉、地图区域、底图库区域 */
+        }
+
+        header {
+            background-color: #0079c1;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            height: 80px; /* 设置页眉高度 */
+            display: flex; /* 使用弹性布局以更好地控制内容对齐 */
+            align-items: center; /* 垂直居中对齐内容 */
+            justify-content: space-between; /* 内容分布在左右两侧 */
+            padding: 0 20px; /* 左右内边距 */
+        }
+
+        header h1 {
+            margin: 0; /* 移除标题的默认外边距 */
+        }
+
+        header a {
+            color: white;
+            text-decoration: none; /* 去掉下划线 */
+            font-weight: bold;
+            background-color: #005a9c; /* 按钮背景颜色 */
+            padding: 10px 20px; /* 按钮内边距 */
+            border-radius: 5px; /* 圆角效果 */
+            transition: background-color 0.3s ease; /* 添加悬停效果 */
+        }
+
+        header a:hover {
+            background-color: #004078; /* 悬停时改变背景颜色 */
+        }
+
+        main {
+            display: flex;
+            flex-direction: row;
+        }
+
+        #mapDiv {
+            flex: 3; /* 地图区域占大比例 */
+            position: relative;
+        }
+
+        #basemapGallery {
+            flex: 1; /* 底图库区域占小比例 */
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-left: 1px solid #ccc;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 5px;
+        }
+
+        /* 图例容器样式 */
+        #legendContainer {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 隐藏图例按钮 */
+        #toggleLegendButton {
+            position: absolute;
+            bottom: 10px;
+            left: 200px;
+            z-index: 10;
+            background-color: #0079c1;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #toggleLegendButton:hover {
+            background-color: #005a9c;
+        }
+    </style>
+    <!-- Load Calcite components from CDN -->
+    <script type="module" src="https://js.arcgis.com/calcite-components/3.0.3/calcite.esm.js"></script>
+
+    <!-- Load the ArcGIS Maps SDK for JavaScript from CDN -->
+    <link rel="stylesheet" href="https://js.arcgis.com/4.32/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.32/"></script>
+</head>
+<body>
+    <!-- 页眉 -->
+    <header>
+        <h1>红茶与主要产茶区域分布</h1>
+        <a href="https://www.geosceneonline.cn/geoscene/webapps/home" target="_blank">跳转到 GeoScene Online</a>
+    </header>
+
+    <!-- 主体部分 -->
+    <main>
+        <!-- 地图区域 -->
+        <div id="mapDiv"></div>
+
+        <!-- 底图库区域 -->
+        <div id="basemapGallery">
+            <h3>选择底图</h3>
+            <div id="basemapContainer"></div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer>
+        <p>&copy; xiaoqian webgis_work6</p>
+    </footer>
+
+    <!-- 图例容器 -->
+    <div id="legendContainer"></div>
+
+    <!-- 隐藏图例按钮 -->
+    <button id="toggleLegendButton">隐藏图例</button>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/FeatureLayer",
+            "esri/widgets/Search",
+            "esri/widgets/Legend",
+            "esri/widgets/ScaleBar",
+            "esri/widgets/LayerList",
+            "esri/widgets/BasemapGallery",
+            "esri/widgets/Home",
+            "esri/widgets/Fullscreen"
+        ], function (
+            Map,
+            MapView,
+            FeatureLayer,
+            Search,
+            Legend,
+            ScaleBar,
+            LayerList,
+            BasemapGallery,
+            Home,
+            Fullscreen
+        ) {
+            // 创建地图实例
+            const map = new Map({
+                basemap: "streets-navigation-vector" // 默认底图
+            });
+
+            // 创建视图实例
+            const view = new MapView({
+                container: "mapDiv", // 地图容器
+                map: map,
+                center: [103.5, 34.4], // 初始中心点坐标
+                zoom: 3 // 初始缩放级别
+            });
+
+            // 添加专题图层
+            const featureLayer1 = new FeatureLayer({
+                url: "https://www.geosceneonline.cn/server/rest/services/Hosted/中华人民共和国边界2/FeatureServer"
+            });
+            map.add(featureLayer1);
+
+            const featureLayer2 = new FeatureLayer({
+                url: "https://www.geosceneonline.cn/server/rest/services/Hosted/产茶省区/FeatureServer"
+            });
+            map.add(featureLayer2);
+
+            const featureLayer3 = new FeatureLayer({
+                url: "https://www.geosceneonline.cn/server/rest/services/Hosted/红茶代表产区/FeatureServer"
+            });
+            map.add(featureLayer3);
+
+            const featureLayer4 = new FeatureLayer({
+                url: "https://www.geosceneonline.cn/server/rest/services/Hosted/中国的黄金产茶带/FeatureServer"
+            });
+            map.add(featureLayer4);
+
+            // 添加搜索框
+            const searchWidget = new Search({
+                view: view
+            });
+            view.ui.add(searchWidget, "top-right");
+
+            // 添加比例尺
+            const scaleBar = new ScaleBar({
+                view: view
+            });
+            view.ui.add(scaleBar, "bottom-right");
+
+            // 图例
+            const legend = new Legend({
+                view: view,
+                container: document.getElementById("legendContainer")
+            });
+
+            // 添加图层列表
+            const layerList = new LayerList({
+                view: view
+            });
+            view.ui.add(layerList, "top-right");
+
+            // 添加底图库
+            const basemapGallery = new BasemapGallery({
+                view: view,
+                container: document.getElementById("basemapContainer")
+            });
+
+            // 添加 Home 按钮
+            const homeWidget = new Home({
+                view: view
+            });
+            view.ui.add(homeWidget, "top-right");
+
+            // 添加 Fullscreen 全屏按钮
+            const fullscreenWidget = new Fullscreen({
+                view: view
+            });
+            view.ui.add(fullscreenWidget, "top-right");
+
+            // 控制图例的显示/隐藏
+            const toggleLegendButton = document.getElementById("toggleLegendButton");
+            const legendContainer = document.getElementById("legendContainer");
+
+            let isLegendVisible = true;
+
+            toggleLegendButton.addEventListener("click", () => {
+                if (isLegendVisible) {
+                    legendContainer.style.display = "none";
+                    toggleLegendButton.textContent = "显示图例";
+                } else {
+                    legendContainer.style.display = "block";
+                    toggleLegendButton.textContent = "隐藏图例";
+                }
+                isLegendVisible = !isLegendVisible;
+            });
+        });
+    </script>
+</body>
+</html>
