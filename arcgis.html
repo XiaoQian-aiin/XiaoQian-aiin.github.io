@@ -59,6 +59,7 @@
             padding: 10px;
             background-color: #f5f5f5;
             border-left: 1px solid #ccc;
+            overflow-y: auto;
         }
 
         footer {
@@ -121,7 +122,7 @@
         <!-- 底图库区域 -->
         <div id="basemapGallery">
             <h3>选择底图</h3>
-            <div id="basemapContainer"></div>
+            <div id="basemapGalleryWidget"></div>
         </div>
     </main>
 
@@ -145,9 +146,10 @@
             "esri/widgets/Legend",
             "esri/widgets/ScaleBar",
             "esri/widgets/LayerList",
-            "esri/widgets/BasemapGallery",
             "esri/widgets/Home",
-            "esri/widgets/Fullscreen"
+            "esri/widgets/Fullscreen",
+            "esri/widgets/BasemapGallery",
+            "esri/widgets/Expand"
         ], function (
             Map,
             MapView,
@@ -156,9 +158,10 @@
             Legend,
             ScaleBar,
             LayerList,
-            BasemapGallery,
             Home,
-            Fullscreen
+            Fullscreen,
+            BasemapGallery,
+            Expand
         ) {
             // 创建地图实例
             const map = new Map({
@@ -202,7 +205,8 @@
 
             // 添加比例尺
             const scaleBar = new ScaleBar({
-                view: view
+                view: view,
+                unit: "metric"
             });
             view.ui.add(scaleBar, "bottom-right");
 
@@ -221,7 +225,7 @@
             // 添加底图库
             const basemapGallery = new BasemapGallery({
                 view: view,
-                container: document.getElementById("basemapContainer")
+                container: document.getElementById("basemapGalleryWidget")
             });
 
             // 添加 Home 按钮
@@ -251,6 +255,11 @@
                     toggleLegendButton.textContent = "隐藏图例";
                 }
                 isLegendVisible = !isLegendVisible;
+            });
+
+            // 等待视图加载完成
+            view.when(() => {
+                console.log("Map and View are ready");
             });
         });
     </script>
